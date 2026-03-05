@@ -1,78 +1,106 @@
 package edu.comillas.icai.gitt.pat.spring.andresguerrero.controlador;
 
-import edu.comillas.icai.gitt.pat.spring.andresguerrero.modelo.Carrito;
+import edu.comillas.icai.gitt.pat.spring.andresguerrero.entidades.Carrito;
+import edu.comillas.icai.gitt.pat.spring.andresguerrero.entidades.LineaCarrito;
+import edu.comillas.icai.gitt.pat.spring.andresguerrero.servicios.ServicioCarrito;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-
-/*
-POST - /api/carrito (Crear carrito)
-GET -/api/carrito (Listado de carritos)
-GET -/api/carrito/<id-carrito> (Descripción de 1 carrito con id <id-carrito>)
-PUT -/api/carrito/<id-carrito> (Modificar el carrito)
-DELETE -/api/carrito/<id-carrito> (Borrar el carrito)
- */
 
 @RestController
+@RequestMapping("/api/carrito")
 public class CarritoControlador {
-    private final Map<Integer, Carrito> carritos = new HashMap<>();
 
-    @GetMapping("/api/carrito")
-    public Collection<Carrito> getCarritos() {
-        //Carrito demo = new Carrito(1, 1, "Camiseta", 5, 7.99);
-        //carritos.put("1", demo);
-        return carritos.values();
+    @Autowired
+    private ServicioCarrito servicioCarrito;
+
+    //GET carrito
+    @GetMapping
+    public List<Carrito> getCarritos() {
+        return servicioCarrito.listarCarritos();
     }
 
-    @PostMapping("/api/carrito")
+    // -------------------------
+    // POST /api/carrito
+    // -------------------------
+    @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public Carrito creaCarrito(@RequestBody Carrito carrito) {
-        carritos.put(carrito.getIdCarrito(), carrito);
-        return carrito;
+        return servicioCarrito.crearCarrito(carrito);
     }
 
-    @GetMapping("/api/carrito/{idCarrito}")
-    //@ResponseStatus(HttpStatus.CREATED)
+    // -------------------------
+    // GET /api/carrito/{id}
+    // -------------------------
+    @GetMapping("/{idCarrito}")
     public Carrito getCarrito(@PathVariable int idCarrito) {
-        return carritos.get(idCarrito);
+        return servicioCarrito.obtenerCarrito(idCarrito);
     }
 
-    @DeleteMapping("/api/carrito/{idCarrito}")
+    // -------------------------
+    // DELETE /api/carrito/{id}
+    // -------------------------
+    @DeleteMapping("/{idCarrito}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void borrarCarrito(@PathVariable int idCarrito) {
+        // si quieres devolver el carrito borrado, cambia el void por Carrito y ajusta el service
+        servicioCarrito.borrarCarrito(idCarrito);
+    }
+
+    // -------------------------
+    // POST /api/carrito/{id}/lineas
+    // -------------------------
+    @PostMapping("/{idCarrito}/lineas")
     @ResponseStatus(HttpStatus.CREATED)
-    public Carrito borrarCarrito(@PathVariable int idCarrito) {
-        return carritos.remove(idCarrito);
+    public LineaCarrito añadirLinea(@PathVariable int idCarrito, @RequestBody LineaRequest request) {
+        return servicioCarrito.añadirLinea(
+                idCarrito,
+                request.getIdArticulo(),
+                request.getPrecioUnitario(),
+                request.getNumUnidades()
+        );
     }
 
-    @PutMapping("/api/carrito/{idCarrito}")
-    public Carrito modificaCarrito(@PathVariable int idCarrito, @RequestBody Carrito carrito){
-        carritos.put(idCarrito, carrito);
-        return carrito;
+    // -------------------------
+    // DELETE /api/carrito/{id}/lineas/{idLinea}
+    // -------------------------
+    @DeleteMapping("/{idCarrito}/lineas/{idLinea}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void borrarLinea(@PathVariable int idCarrito, @PathVariable int idLinea) {
+        servicioCarrito.borrarLineaPorIdLinea(idCarrito, idLinea);
     }
 
-    /*@PostMapping("/api/contadores")
-    @ResponseStatus(HttpStatus.CREATED)
-    public ModeloContador crea(@RequestBody ModeloContador contadorNuevo) {
-        contadores.put(contadorNuevo.nombre(), contadorNuevo);
-        return contadorNuevo;
-    }
+    // DTO interno para el body del POST /lineas
+    // (evitas reutilizar la entidad y te llega solo lo necesario)
+    public static class LineaRequest {
+        private int idArticulo;
+        private double precioUnitario;
+        private int numUnidades;
 
-    @GetMapping("/api/contadores/{nombre}")
-    public ModeloContador contador(@PathVariable String nombre) {
-        return contadores.get(nombre);
-    }
+        public int getIdArticulo() {
+            return idArticulo;
+        }
 
-    @PutMapping("/api/contadores/{nombre}/incremento/{incremento}")
-    public ModeloContador incrementa(@PathVariable String nombre,
-                                     @PathVariable Integer incremento) {
-        ModeloContador contadorActual = contadores.get(nombre);
-        ModeloContador contadorIncrementado =
-                new ModeloContador(nombre, contadorActual.valor() + incremento);
-        contadores.put(nombre, contadorIncrementado);
-        return contadorIncrementado;
-    }*/
+        public void setIdArticulo(int idArticulo) {
+            this.idArticulo = idArticulo;
+        }
+
+        public double getPrecioUnitario() {
+            return precioUnitario;
+        }
+
+        public void setPrecioUnitario(double precioUnitario) {
+            this.precioUnitario = precioUnitario;
+        }
+
+        public int getNumUnidades() {
+            return numUnidades;
+        }
+
+        public void setNumUnidades(int numUnidades) {
+            this.numUnidades = numUnidades;
+        }
+    }
 }
-
